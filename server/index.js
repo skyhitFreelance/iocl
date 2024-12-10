@@ -126,13 +126,63 @@ app.get("/petrol-stations/suggestions", (req, res) => {
 });
 
 // --- 4. Search Petrol Stations with Pagination ---
-app.get("/petrol-stations/search", (req, res) => {
-    let { latitude, longitude, radius, page = 1, pageSize = 10 } = req.query;
+// app.get("/petrol-stations/search", (req, res) => {
+//     let { latitude, longitude, radius, page = 1, pageSize = 10 } = req.query;
   
-    // Validate and parse inputs
+//     // Validate and parse inputs
+//     latitude = parseFloat(latitude);
+//     longitude = parseFloat(longitude);
+//     radius = radius ? parseFloat(radius) : null; // Allow radius to be null
+//     page = parseInt(page);
+//     pageSize = parseInt(pageSize);
+  
+//     if (isNaN(latitude) || isNaN(longitude) || isNaN(page) || isNaN(pageSize)) {
+//       return res.status(400).json({
+//         error: "Invalid input. Latitude, longitude, page, and pageSize must be valid numbers.",
+//       });
+//     }
+  
+//     // Calculate offset for pagination
+//     const offset = (page - 1) * pageSize;
+  
+//     // Adjust query based on whether radius is provided
+//     let radiusQuery = `
+//         SELECT id, ro_name AS name, address, latitude, longitude, fo_mobile as mobile, pin_code as pincode,
+//           (6371 * acos(
+//             cos(radians(?)) * cos(radians(latitude)) *
+//             cos(radians(longitude) - radians(?)) +
+//             sin(radians(?)) * sin(radians(latitude))
+//           )) AS distance
+//         FROM petrol_stations
+//     `;
+//     const params = [latitude, longitude, latitude];
+  
+//     if (radius) {
+//       radiusQuery += ` HAVING distance <= ?`;
+//       params.push(radius);
+//     }
+  
+//     radiusQuery += ` ORDER BY distance LIMIT ? OFFSET ?;`;
+//     params.push(pageSize, offset);
+  
+//     // Execute the query
+//     db.query(radiusQuery, params, (err, results) => {
+//       if (err) {
+//         console.error("Error fetching petrol stations:", err);
+//         return res.status(500).json({ error: "Failed to fetch petrol stations." });
+//       }
+//       res.status(200).json({
+//         data: results,
+//         pagination: { page: page, pageSize: pageSize, total: results.length },
+//       });
+//     });
+//   });
+
+app.get("/petrol-stations/search", (req, res) => {
+    let { latitude, longitude, page = 1, pageSize = 10 } = req.query;
+  
     latitude = parseFloat(latitude);
     longitude = parseFloat(longitude);
-    radius = radius ? parseFloat(radius) : null; // Allow radius to be null
     page = parseInt(page);
     pageSize = parseInt(pageSize);
   
@@ -142,71 +192,106 @@ app.get("/petrol-stations/search", (req, res) => {
       });
     }
   
-    // Calculate offset for pagination
     const offset = (page - 1) * pageSize;
   
-    // Adjust query based on whether radius is provided
-    let radiusQuery = `
-        SELECT id, ro_name AS name, address, latitude, longitude, fo_mobile as mobile, pin_code as pincode,
-          (6371 * acos(
-            cos(radians(?)) * cos(radians(latitude)) *
-            cos(radians(longitude) - radians(?)) +
-            sin(radians(?)) * sin(radians(latitude))
-          )) AS distance
+    let countQuery = `
+        SELECT COUNT(*) AS total
         FROM petrol_stations
     `;
-    const params = [latitude, longitude, latitude];
+    let mainQuery = `
+        SELECT id, ro_name AS name, address, latitude, longitude, fo_mobile as mobile, pin_code as pincode
+        FROM petrol_stations
+        ORDER BY id ASC
+        LIMIT ? OFFSET ?;
+    `;
   
-    if (radius) {
-      radiusQuery += ` HAVING distance <= ?`;
-      params.push(radius);
-    }
-  
-    radiusQuery += ` ORDER BY distance LIMIT ? OFFSET ?;`;
-    params.push(pageSize, offset);
-  
-    // Execute the query
-    db.query(radiusQuery, params, (err, results) => {
+    // First query: Get total count
+    db.query(countQuery, [], (err, countResults) => {
       if (err) {
-        console.error("Error fetching petrol stations:", err);
-        return res.status(500).json({ error: "Failed to fetch petrol stations." });
+        console.error("Error fetching count:", err);
+        return res.status(500).json({ error: "Failed to fetch petrol stations count." });
       }
-      res.status(200).json({
-        data: results,
-        pagination: { page: page, pageSize: pageSize, total: results.length },
+      const total = countResults[0]?.total || 0;
+  
+      // Second query: Get paginated results
+      db.query(mainQuery, [pageSize, offset], (err, results) => {
+        if (err) {
+          console.error("Error fetching petrol stations:", err);
+          return res.status(500).json({ error: "Failed to fetch petrol stations." });
+        }
+        res.status(200).json({
+          data: results,
+          pagination: { page: page, pageSize: pageSize, total: total },
+        });
       });
     });
   });
   
+  
 
 // --- 5. Add Petrol Station (Requires Authentication) ---
 app.post("/petrol-stations", verifyToken, (req, res) => {
-  const {
-    do_name,
-    ro_name,
-    address,
-    latitude,
-    longitude,
-  } = req.body;
-
-  if (!do_name || !ro_name || !address || !latitude || !longitude) {
-    return res.status(400).json({ error: "Required fields are missing." });
-  }
-
-  const insertQuery = `
-    INSERT INTO petrol_stations (do_name, ro_name, address, latitude, longitude)
-    VALUES (?, ?, ?, ?, ?);
-  `;
-  const params = [do_name, ro_name, address, parseFloat(latitude), parseFloat(longitude)];
-
-  db.query(insertQuery, params, (err, results) => {
-    if (err) {
-      console.error("Error inserting petrol station:", err);
-      return res.status(500).json({ error: "Failed to add petrol station." });
+    const {
+      do_name,
+      fo_name,
+      fo_email,
+      fo_mobile,
+      ro_code,
+      sa_name,
+      ro_name,
+      ssr,
+      district,
+      address,
+      pin_code,
+      latitude,
+      longitude,
+      pan_number,
+      gstin,
+      ro_email,
+      mobile_number,
+    } = req.body;
+  
+    if (!do_name || !ro_name || !address || !latitude || !longitude || !district) {
+      return res.status(400).json({ error: "Required fields are missing." });
     }
-    res.status(201).json({ message: "Petrol station added successfully.", id: results.insertId });
+  
+    const insertQuery = `
+      INSERT INTO petrol_stations (
+        do_name, fo_name, fo_email, fo_mobile, ro_code, sa_name, ro_name, ssr,
+        district, address, pin_code, latitude, longitude, pan_number, gstin, ro_email, mobile_number
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+    `;
+  
+    const params = [
+      do_name,
+      fo_name || null,
+      fo_email || null,
+      fo_mobile || null,
+      ro_code || null,
+      sa_name || null,
+      ro_name,
+      ssr || null,
+      district,
+      address,
+      pin_code || null,
+      parseFloat(latitude),
+      parseFloat(longitude),
+      pan_number || null,
+      gstin || null,
+      ro_email || null,
+      mobile_number || null,
+    ];
+  
+    db.query(insertQuery, params, (err, results) => {
+      if (err) {
+        console.error("Error inserting petrol station:", err);
+        return res.status(500).json({ error: "Failed to add petrol station." });
+      }
+      res.status(201).json({ message: "Petrol station added successfully.", id: results.insertId });
+    });
   });
-});
+  
 
 // Start the server
 app.listen(PORT, () => {
