@@ -11,7 +11,7 @@ const LoginPage = ({ onLogin }) => {
     e.preventDefault();
 
     try {
-      const response = await fetch("api/login", {
+      const response = await fetch("https://demo.skyhitmedia.website/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),

@@ -12,11 +12,7 @@ const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret_key";
 
 app.use(express.json());
 app.use(
-  cors({
-    origin: "http://localhost:5173",
-    methods: ["GET", "POST", "PUT", "DELETE"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-  })
+  cors()
 );
 
 const db = mysql.createConnection({
@@ -100,21 +96,18 @@ app.post("/login", (req, res) => {
 
 // --- 3. Search Suggestions Endpoint ---
 app.get("/petrol-stations/suggestions", (req, res) => {
-  const { query, page = 1, pageSize = 10 } = req.query;
+  const { query } = req.query;
 
   if (!query) {
     return res.status(400).json({ error: "Query parameter is required." });
   }
 
-  const offset = (page - 1) * pageSize;
-
   const suggestionQuery = `
     SELECT id, ro_name AS name, address, latitude, longitude
     FROM petrol_stations
     WHERE ro_name LIKE ? OR address LIKE ?
-    LIMIT ? OFFSET ?
   `;
-  const params = [`%${query}%`, `%${query}%`, parseInt(pageSize), parseInt(offset)];
+  const params = [`%${query}%`, `%${query}%`];
 
   db.query(suggestionQuery, params, (err, results) => {
     if (err) {
@@ -124,6 +117,7 @@ app.get("/petrol-stations/suggestions", (req, res) => {
     res.status(200).json(results);
   });
 });
+
 
 // --- 4. Search Petrol Stations with Pagination ---
 // app.get("/petrol-stations/search", (req, res) => {
@@ -178,56 +172,123 @@ app.get("/petrol-stations/suggestions", (req, res) => {
 //     });
 //   });
 
+// important one - future implementation
+// app.get("/petrol-stations/search", (req, res) => {
+//     let { latitude, longitude, page = 1, pageSize = 10 } = req.query;
+  
+//     latitude = parseFloat(latitude);
+//     longitude = parseFloat(longitude);
+//     page = parseInt(page);
+//     pageSize = parseInt(pageSize);
+  
+//     if (isNaN(latitude) || isNaN(longitude) || isNaN(page) || isNaN(pageSize)) {
+//       return res.status(400).json({
+//         error: "Invalid input. Latitude, longitude, page, and pageSize must be valid numbers.",
+//       });
+//     }
+  
+//     const offset = (page - 1) * pageSize;
+  
+//     let countQuery = `
+//         SELECT COUNT(*) AS total
+//         FROM petrol_stations
+//     `;
+//     let mainQuery = `
+//         SELECT id, ro_name AS name, address, latitude, longitude, fo_mobile as mobile, pin_code as pincode
+//         FROM petrol_stations
+//         ORDER BY id ASC
+//         LIMIT ? OFFSET ?;
+//     `;
+  
+//     // First query: Get total count
+//     db.query(countQuery, [], (err, countResults) => {
+//       if (err) {
+//         console.error("Error fetching count:", err);
+//         return res.status(500).json({ error: "Failed to fetch petrol stations count." });
+//       }
+//       const total = countResults[0]?.total || 0;
+  
+//       // Second query: Get paginated results
+//       db.query(mainQuery, [pageSize, offset], (err, results) => {
+//         if (err) {
+//           console.error("Error fetching petrol stations:", err);
+//           return res.status(500).json({ error: "Failed to fetch petrol stations." });
+//         }
+//         res.status(200).json({
+//           data: results,
+//           pagination: { page: page, pageSize: pageSize, total: total },
+//         });
+//       });
+//     });
+//   });
+  
 app.get("/petrol-stations/search", (req, res) => {
-    let { latitude, longitude, page = 1, pageSize = 10 } = req.query;
-  
-    latitude = parseFloat(latitude);
-    longitude = parseFloat(longitude);
-    page = parseInt(page);
-    pageSize = parseInt(pageSize);
-  
-    if (isNaN(latitude) || isNaN(longitude) || isNaN(page) || isNaN(pageSize)) {
-      return res.status(400).json({
-        error: "Invalid input. Latitude, longitude, page, and pageSize must be valid numbers.",
+  const { query = "default", page = 1, pageSize = 10 } = req.query;
+  // Ensure `page` and `pageSize` are integers
+  const currentPage = parseInt(page, 10) || 1;
+  const currentPageSize = parseInt(pageSize, 10) || 10;
+  const offset = (currentPage - 1) * currentPageSize;
+
+  console.log("Query Params:", { query, currentPage, currentPageSize, offset });
+
+  let countQuery, mainQuery, params;
+
+  if (query === "default") {
+    countQuery = `SELECT COUNT(*) AS total FROM petrol_stations;`;
+    mainQuery = `
+      SELECT id, ro_name AS name, address, latitude, longitude, fo_mobile AS mobile, pin_code AS pincode
+      FROM petrol_stations
+      ORDER BY id ASC
+      LIMIT ? OFFSET ?;
+    `;
+    params = [currentPageSize, offset];
+  } else {
+    countQuery = `
+      SELECT COUNT(*) AS total
+      FROM petrol_stations
+      WHERE ro_name LIKE ? OR address LIKE ?;
+    `;
+    mainQuery = `
+      SELECT id, ro_name AS name, address, latitude, longitude, fo_mobile AS mobile, pin_code AS pincode
+      FROM petrol_stations
+      WHERE ro_name LIKE ? OR address LIKE ?
+      ORDER BY id ASC
+      LIMIT ? OFFSET ?;
+    `;
+    const queryParam = `%${query}%`;
+    params = [queryParam, queryParam, currentPageSize, offset];
+  }
+
+  // Fetch the total count of records
+  db.query(countQuery, params.slice(0, 2), (err, countResults) => {
+    if (err) {
+      console.error("Error fetching count:", err);
+      return res.status(500).json({ error: "Failed to fetch petrol stations count." });
+    }
+    const total = countResults[0]?.total || 0;
+
+    if (total === 0) {
+      console.log("No data found for the given query.");
+      return res.status(200).json({
+        data: [],
+        pagination: { page: currentPage, pageSize: currentPageSize, total },
       });
     }
-  
-    const offset = (page - 1) * pageSize;
-  
-    let countQuery = `
-        SELECT COUNT(*) AS total
-        FROM petrol_stations
-    `;
-    let mainQuery = `
-        SELECT id, ro_name AS name, address, latitude, longitude, fo_mobile as mobile, pin_code as pincode
-        FROM petrol_stations
-        ORDER BY id ASC
-        LIMIT ? OFFSET ?;
-    `;
-  
-    // First query: Get total count
-    db.query(countQuery, [], (err, countResults) => {
+
+    // Fetch the paginated results
+    db.query(mainQuery, params, (err, results) => {
       if (err) {
-        console.error("Error fetching count:", err);
-        return res.status(500).json({ error: "Failed to fetch petrol stations count." });
+        console.error("Error fetching petrol stations:", err);
+        return res.status(500).json({ error: "Failed to fetch petrol stations." });
       }
-      const total = countResults[0]?.total || 0;
-  
-      // Second query: Get paginated results
-      db.query(mainQuery, [pageSize, offset], (err, results) => {
-        if (err) {
-          console.error("Error fetching petrol stations:", err);
-          return res.status(500).json({ error: "Failed to fetch petrol stations." });
-        }
-        res.status(200).json({
-          data: results,
-          pagination: { page: page, pageSize: pageSize, total: total },
-        });
+      res.status(200).json({
+        data: results,
+        pagination: { page: currentPage, pageSize: currentPageSize, total },
       });
     });
   });
-  
-  
+});
+
 
 // --- 5. Add Petrol Station (Requires Authentication) ---
 app.post("/petrol-stations", verifyToken, (req, res) => {

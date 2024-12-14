@@ -30,7 +30,7 @@ const AddPetrolStation = ({ loggedIn }) => {
     e.preventDefault();
 
     try {
-      const response = await fetch("api/petrol-stations", {
+      const response = await fetch("https://demo.skyhitmedia.website/petrol-stations", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

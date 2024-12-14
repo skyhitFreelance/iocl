@@ -1,13 +1,17 @@
 /* eslint-disable react/prop-types */
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { FaMapMarkerAlt, FaSuitcase } from "react-icons/fa";
 import SearchCard from "./components/Search";
 import LoginPage from "./components/Login";
 import AddPetrolStation from "./components/AddPetrolStation";
+import { Swiper, SwiperSlide } from "swiper/react";
+import "swiper/css";
+import "swiper/css/pagination";
+import "swiper/css/navigation";
+import { Autoplay, Pagination as Page, Navigation } from "swiper/modules";
 
 const StationCard = ({ station }) => {
-  console.log(station, "station");
   const parseAddress = (address) => {
     const parts = address.split(",");
     return {
@@ -112,13 +116,14 @@ const PetrolStationFinder = () => {
   const [pageSize] = useState(10); // Default page size
   const [loading, setLoading] = useState(false);
   const [totalPages, setTotalPages] = useState(0);
+  const [lastQuery, setLastQuery] = useState("default");
   const [lastLat, setLastLat] = useState(null); // To store the last searched latitude
   const [lastLng, setLastLng] = useState(null); // To store the last searched longitude
 
-  const handleSearch = async ({ lat, lng, page = 1 }) => {
+  const handleSearch = async ({ query, page = 1 }) => {
     try {
       setLoading(true);
-      let url = `api/petrol-stations/search?latitude=${lat}&longitude=${lng}`;
+      let url = `https://demo.skyhitmedia.website/petrol-stations/search?query=${encodeURIComponent(query)}`;
       url += `&page=${page}&pageSize=${pageSize}`;
 
       const response = await fetch(url);
@@ -128,8 +133,9 @@ const PetrolStationFinder = () => {
       const data = await response.json();
       setStations(data.data);
       setTotalPages(Math.ceil(data.pagination.total / pageSize));
-      setLastLat(lat);
-      setLastLng(lng);
+      setLastQuery(query);
+      // setLastLat(lat);
+      // setLastLng(lng);
     } catch (error) {
       console.error("Error fetching petrol stations:", error);
     } finally {
@@ -140,29 +146,96 @@ const PetrolStationFinder = () => {
   const handlePageChange = (page) => {
     if (page < 1 || page > totalPages) return;
     setCurrentPage(page); // Update the current page state
-    if (lastLat && lastLng) {
-      handleSearch({ lat: lastLat, lng: lastLng, page }); // Trigger search with the updated page
-    }
+    handleSearch({ query: lastQuery, page });
   };
 
+  useEffect(() => {
+    handleSearch({ query: "default", page: 1 }); // Replace "default" with your actual default query
+  }, []);
+
   return (
-    <div className="container mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-4">Petrol Station Finder</h1>
-      <SearchCard onSearch={(latLng) => handleSearch({ ...latLng, page: 1 })} />
+    <div className="mx-auto">
+      <div className="text-2xl font-bold mb-4 ml-4 lg:ml-20 p-4">
+        <img
+          src="https://cdn4.singleinterface.com/files/outlet/logo/99528/Logo_jpg.jpg"
+          alt="IndianOil Logo"
+          className="h-12 w-auto mr-2"
+        />
+      </div>
+      {/* <SearchCard onSearch={(latLng) => handleSearch({ ...latLng, page: 1 })} /> */}
+      <div className="bg-custom-gradient">
+        <div className=" mx-auto max-w-6xl flex flex-col md:flex-row w-full h-ful p-4 gap-4">
+          {/* SearchCard Section */}
+          <div className="w-full md:w-1/3 bg-white flex items-start rounded-2xl p-4">
+            <SearchCard
+              onSearch={(query) => handleSearch({ query, page: 1 })}
+            />
+          </div>
+
+          {/* Swiper Section */}
+          <div className="w-full md:w-2/3 flex justify-center items-center rounded-md">
+            {/* Your Swiper Component */}
+            <Swiper
+              autoplay={{
+                delay: 2500,
+                disableOnInteraction: false,
+              }}
+              modules={[Autoplay, Page, Navigation]}
+              spaceBetween={30}
+              centeredSlides={true}
+              className="mySwiper"
+              pagination={{
+                clickable: true,
+              }}
+              navigation={false}
+            >
+              <SwiperSlide>
+                <img
+                  src="https://cdn4.singleinterface.com/files/enterprise/coverphoto/99528/Indian-Oil-net-zero-banner-17-04-23-02-13-09.jpg"
+                  alt="Slide 1"
+                />
+              </SwiperSlide>
+              <SwiperSlide>
+                <img
+                  src="https://cdn4.singleinterface.com/files/enterprise/coverphoto/99528/Banner-2-02-03-23-12-58-02.jpg"
+                  alt="Slide 2"
+                />
+              </SwiperSlide>
+            </Swiper>
+          </div>
+        </div>
+      </div>
       {loading ? (
         <Loader />
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mt-6">
-          {stations.map((station) => (
-            <StationCard key={station.id} station={station} />
-          ))}
+        <div className="mt-8">
+          {stations?.length > 0 && (
+            <h4 className="text-center text-3xl font-medium">
+              {lastQuery === "default" ? (
+                "Available Petrol Stations"
+              ) : (
+                <>
+                  IndianOil Fuel Stations in{" "}
+                  <span className="text-[#f35e04]">{lastQuery}</span>
+                </>
+              )}
+            </h4>
+          )}
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mt-6 px-4">
+            {stations?.map((station) => (
+              <StationCard key={station.id} station={station} />
+            ))}
+          </div>
         </div>
       )}
-      <Pagination
-        currentPage={currentPage}
-        totalPages={totalPages}
-        onPageChange={handlePageChange}
-      />
+      {stations?.length > 0 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={handlePageChange}
+        />
+      )}
     </div>
   );
 };
