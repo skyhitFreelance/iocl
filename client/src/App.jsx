@@ -10,6 +10,12 @@ import "swiper/css";
 import "swiper/css/pagination";
 import "swiper/css/navigation";
 import { Autoplay, Pagination as Page, Navigation } from "swiper/modules";
+import banner1 from "./assets/IOC Banners.png";
+import banner2 from "./assets/IOC Banners (1).png";
+import banner3 from "./assets/IOC Banners (2).png";
+import banner4 from "./assets/IOC Banners (3).png";
+
+const banner = [banner1, banner2, banner3, banner4];
 
 const StationCard = ({ station }) => {
   const parseAddress = (address) => {
@@ -123,7 +129,9 @@ const PetrolStationFinder = () => {
   const handleSearch = async ({ query, page = 1 }) => {
     try {
       setLoading(true);
-      let url = `https://demo.skyhitmedia.website/petrol-stations/search?query=${encodeURIComponent(query)}`;
+      let url = `https://demo.skyhitmedia.website/petrol-stations/search?query=${encodeURIComponent(
+        query
+      )}`;
       url += `&page=${page}&pageSize=${pageSize}`;
 
       const response = await fetch(url);
@@ -149,9 +157,9 @@ const PetrolStationFinder = () => {
     handleSearch({ query: lastQuery, page });
   };
 
-  useEffect(() => {
-    handleSearch({ query: "default", page: 1 }); // Replace "default" with your actual default query
-  }, []);
+  // useEffect(() => {
+  //   handleSearch({ query: "default", page: 1 }); // Replace "default" with your actual default query
+  // }, []);
 
   return (
     <div className="mx-auto">
@@ -189,18 +197,17 @@ const PetrolStationFinder = () => {
               }}
               navigation={false}
             >
-              <SwiperSlide>
-                <img
-                  src="https://cdn4.singleinterface.com/files/enterprise/coverphoto/99528/Indian-Oil-net-zero-banner-17-04-23-02-13-09.jpg"
-                  alt="Slide 1"
-                />
-              </SwiperSlide>
-              <SwiperSlide>
+              {banner.map((img, i) => (
+                <SwiperSlide key={i}>
+                  <img src={img} alt={`Slide ${i+'1'}`} />
+                </SwiperSlide>
+              ))}
+              {/* <SwiperSlide>
                 <img
                   src="https://cdn4.singleinterface.com/files/enterprise/coverphoto/99528/Banner-2-02-03-23-12-58-02.jpg"
                   alt="Slide 2"
                 />
-              </SwiperSlide>
+              </SwiperSlide> */}
             </Swiper>
           </div>
         </div>

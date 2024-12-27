@@ -209,6 +209,7 @@ const SearchCard = ({ onSearch }) => {
       {/* Search Input */}
       <div className="mb-4 w-full relative flex items-center flex-col gap-3">
       <h2 className="text-xl font-medium mb-2">Locate the nearest fuel station(s)</h2>
+      <div className="relative w-full mb-4">
         <input
           type="text"
           placeholder="Search for a location..."
@@ -219,19 +220,21 @@ const SearchCard = ({ onSearch }) => {
         {suggestions.length > 0 && (
           <ul
             ref={dropdownRef}
-            className="absolute bg-white border rounded-lg max-h-48 overflow-y-auto mt-1 z-10"
+            className="absolute top-full left-0 w-full bg-white border rounded-lg max-h-48 overflow-y-auto mt-1 z-10 shadow-md"
           >
             {suggestions.map((place) => (
               <li
                 key={place.id}
-                className="p-2 hover:bg-gray-200 cursor-pointer"
+                className="p-2 hover:bg-gray-200 cursor-pointer text-ellipsis whitespace-nowrap overflow-hidden"
                 onClick={() => handleSuggestionClick(place)}
+                title={`${place.name} - ${place.address}`}
               >
                 {place.name} - {place.address}
               </li>
             ))}
           </ul>
         )}
+        </div>
          {/* Buttons */}
       <div className="flex gap-4 items-center">
         <button
