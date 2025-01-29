@@ -14,6 +14,7 @@ import banner1 from "./assets/IOC Banners.png";
 import banner2 from "./assets/IOC Banners (1).png";
 import banner3 from "./assets/IOC Banners (2).png";
 import banner4 from "./assets/IOC Banners (3).png";
+import { Helmet } from "react-helmet";
 
 const banner = [banner1, banner2, banner3, banner4];
 
@@ -199,7 +200,7 @@ const PetrolStationFinder = () => {
             >
               {banner.map((img, i) => (
                 <SwiperSlide key={i}>
-                  <img src={img} alt={`Slide ${i+'1'}`} />
+                  <img src={img} alt={`Slide ${i + "1"}`} />
                 </SwiperSlide>
               ))}
               {/* <SwiperSlide>
@@ -261,39 +262,56 @@ const App = () => {
   };
 
   return (
-    <div className="relative">
-      <Routes>
-        <Route path="/" element={<PetrolStationFinder />} />
-        <Route
-          path="/login"
-          element={
-            loggedIn ? (
-              <Navigate to="/add" />
-            ) : (
-              <LoginPage onLogin={handleLoginSuccess} />
-            )
-          }
+    <>
+      <Helmet>
+        <title>IndianOil Locator/Finder | Petrol Pump</title>
+        <meta
+          name="description"
+          content="Find closest IndianOil fuel station. Get accurate fuel station information e.g. address, phone no, map & timings."
         />
-        <Route
-          path="/add"
-          element={
-            loggedIn ? (
-              <>
-                <button
-                  onClick={handleLogout}
-                  className="bg-red-500 text-white py-2 px-4 rounded-lg mb-4 hover:bg-red-600 absolute right-20 m-5"
-                >
-                  Logout
-                </button>
-                <AddPetrolStation loggedIn={loggedIn} />
-              </>
-            ) : (
-              <Navigate to="/login" />
-            )
-          }
-        />
-      </Routes>
-    </div>
+      </Helmet>
+
+      <div className="relative min-h-screen flex flex-col">
+        <div className="flex-grow">
+          <Routes>
+            <Route path="/" element={<PetrolStationFinder />} />
+            <Route
+              path="/login"
+              element={
+                loggedIn ? (
+                  <Navigate to="/add" />
+                ) : (
+                  <LoginPage onLogin={handleLoginSuccess} />
+                )
+              }
+            />
+            <Route
+              path="/add"
+              element={
+                loggedIn ? (
+                  <>
+                    <button
+                      onClick={handleLogout}
+                      className="bg-red-500 text-white py-2 px-4 rounded-lg mb-4 hover:bg-red-600 absolute right-20 m-5"
+                    >
+                      Logout
+                    </button>
+                    <AddPetrolStation loggedIn={loggedIn} />
+                  </>
+                ) : (
+                  <Navigate to="/login" />
+                )
+              }
+            />
+          </Routes>
+        </div>
+        <footer className="w-full text-center p-4 text-sm text-black bg-gray-100">
+          &copy; {new Date().getFullYear()} IOCL Clear Blue. All rights
+          reserved. Designed and Maintained by{" "}
+          <span className="font-semibold">SKYHIT MEDIA.</span>
+        </footer>
+      </div>
+    </>
   );
 };
 
