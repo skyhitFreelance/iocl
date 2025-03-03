@@ -96,15 +96,15 @@ app.post("/login", (req, res) => {
 
 // --- 3. Search Suggestions Endpoint ---
 app.get("/petrol-stations/suggestions", (req, res) => {
-  const { query } = req.query;
+  const { query, tenant = "iocl" } = req.query;
 
   if (!query) {
     return res.status(400).json({ error: "Query parameter is required." });
   }
-
+  let tableName = tenant === "hpdef" ? "petrol_stations_hpdef" : "petrol_stations_iocl";
   const suggestionQuery = `
     SELECT id, ro_name AS name, address, latitude, longitude
-    FROM petrol_stations
+    FROM ${tableName}
     WHERE ro_name LIKE ? OR address LIKE ?
   `;
   const params = [`%${query}%`, `%${query}%`];
@@ -223,21 +223,30 @@ app.get("/petrol-stations/suggestions", (req, res) => {
 //   });
   
 app.get("/petrol-stations/search", (req, res) => {
-  const { query = "default", page = 1, pageSize = 10 } = req.query;
+  const { query = "default", tenant = "iocl", page = 1, pageSize = 10 } = req.query;
   // Ensure `page` and `pageSize` are integers
   const currentPage = parseInt(page, 10) || 1;
   const currentPageSize = parseInt(pageSize, 10) || 10;
   const offset = (currentPage - 1) * currentPageSize;
 
-  console.log("Query Params:", { query, currentPage, currentPageSize, offset });
+  console.log("Query Params:", { query, tenant, currentPage, currentPageSize, offset });
+
+  let tableName;
+  if (tenant === "hpdef") {
+    tableName = "petrol_stations_hpdef";
+  } else {
+    // Default to IOCL if tenant is not 'hpdef'
+    tableName = "petrol_stations_iocl";
+  }
 
   let countQuery, mainQuery, params;
+  
 
   if (query === "default") {
-    countQuery = `SELECT COUNT(*) AS total FROM petrol_stations;`;
+    countQuery = `SELECT COUNT(*) AS total FROM ${tableName};`;
     mainQuery = `
       SELECT id, ro_name AS name, address, latitude, longitude, fo_mobile AS mobile, pin_code AS pincode
-      FROM petrol_stations
+      FROM ${tableName}
       ORDER BY id ASC
       LIMIT ? OFFSET ?;
     `;
@@ -245,12 +254,12 @@ app.get("/petrol-stations/search", (req, res) => {
   } else {
     countQuery = `
       SELECT COUNT(*) AS total
-      FROM petrol_stations
+      FROM ${tableName}
       WHERE ro_name LIKE ? OR address LIKE ?;
     `;
     mainQuery = `
       SELECT id, ro_name AS name, address, latitude, longitude, fo_mobile AS mobile, pin_code AS pincode
-      FROM petrol_stations
+      FROM ${tableName}
       WHERE ro_name LIKE ? OR address LIKE ?
       ORDER BY id ASC
       LIMIT ? OFFSET ?;
@@ -352,6 +361,77 @@ app.post("/petrol-stations", verifyToken, (req, res) => {
       res.status(201).json({ message: "Petrol station added successfully.", id: results.insertId });
     });
   });
+
+
+// shopify orders webhook for bakerlore
+app.post('/shopify/orders', async (req, res) => {
+  const order = req.body;
+console.log(order, 'testing order');
+  // Prepare EkSecond Confirm API payload
+  // const ekSecondPayload = {
+  //   transactionId: order.id.toString(),
+  //   orderId: order.id.toString(),
+  //   start: {
+  //     location: {
+  //       gps: "12.93000982987807, 77.68000209918753",  // Example restaurant/warehouse location
+  //       address: {
+  //         name: "Restaurant Name",
+  //         street: "Main Road",
+  //         locality: "Marathahalli",
+  //         city: "Bengaluru",
+  //         state: "Karnataka",
+  //         country: "IND",
+  //         area_code: "560035"
+  //       }
+  //     },
+  //     contact: {
+  //       name: "Manager",
+  //       phone: "9346193388"
+  //     }
+  //   },
+  //   end: {
+  //     location: {
+  //       gps: "12.93000982987807, 77.68000209918753",  // Replace this with dynamic customer GPS coordinates
+  //       address: {
+  //         name: order.shipping_address.first_name,
+  //         street: order.shipping_address.address1,
+  //         city: order.shipping_address.city,
+  //         state: order.shipping_address.province,
+  //         country: order.shipping_address.country,
+  //         area_code: order.shipping_address.zip
+  //       }
+  //     },
+  //     contact: {
+  //       name: order.shipping_address.first_name,
+  //       phone: order.shipping_address.phone
+  //     }
+  //   },
+  //   items: order.line_items.map(item => ({
+  //     itemId: item.id.toString(),
+  //     title: item.title,
+  //     titleType: "item",
+  //     price: item.price,
+  //     quantity: item.quantity
+  //   }))
+  // };
+
+  // try {
+  //   // Send order details to EkSecond Confirm API
+  //   const response = await fetch('https://base_url/ext/confirm', {
+  //     method: 'POST',
+  //     headers: { 'Content-Type': 'application/json' },
+  //     body: JSON.stringify(ekSecondPayload)
+  //   });
+
+  //   const confirmResponse = await response.json();
+  //   console.log('Order confirmed with EkSecond:', confirmResponse);
+
+  //   res.status(200).send('Webhook processed successfully');
+  // } catch (error) {
+  //   console.error('Error calling EkSecond Confirm API:', error);
+  //   res.status(500).send('Error processing webhook');
+  // }
+});
   
 
 // Start the server

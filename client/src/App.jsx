@@ -16,7 +16,11 @@ import banner3 from "./assets/IOC Banners (2).png";
 import banner4 from "./assets/IOC Banners (3).png";
 import { Helmet } from "react-helmet";
 
+import { getTenantConfig } from "./tenantConfig";
+
 const banner = [banner1, banner2, banner3, banner4];
+
+const config = getTenantConfig();
 
 const StationCard = ({ station }) => {
   const parseAddress = (address) => {
@@ -37,7 +41,7 @@ const StationCard = ({ station }) => {
 
   return (
     <div className="bg-white drop-shadow-md rounded-lg p-4 mb-4">
-      <h2 className="text-lg font-bold text-gray-800">IOCL</h2>
+      <h2 className="text-lg font-bold text-gray-800">{config?.name}</h2>
       <hr className="my-2" />
       <div className="flex items-center text-sm text-gray-600 mb-2">
         <FaSuitcase className="mr-2" />
@@ -58,13 +62,21 @@ const StationCard = ({ station }) => {
         {station.mobile ? (
           <a
             href={`tel:${station.mobile}`}
-            className="bg-[#013d86] text-white py-1 px-4 rounded hover:bg-[#013d86]"
+            className={
+              config.tenant === "hpdef"
+                ? "bg-hpdefPrimary text-white py-1 px-4 rounded hover:bg-hpdefPrimary"
+                : "bg-ioclPrimary text-white py-1 px-4 rounded hover:bg-ioclPrimary"
+            }
           >
             Call
           </a>
         ) : (
           <button
-            className="bg-[#013d86] text-white py-1 px-4 rounded cursor-not-allowed"
+          className={
+            config.tenant === "hpdef"
+              ? "bg-hpdefPrimary text-white py-1 px-4 rounded cursor-not-allowed"
+              : "bg-ioclPrimary text-white py-1 px-4 rounded cursor-not-allowed"
+          }
             disabled
           >
             Call
@@ -74,7 +86,11 @@ const StationCard = ({ station }) => {
           href={googleMapsUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="bg-[#f35e04] text-white py-1 px-4 rounded hover:bg-[#f35e04]"
+          className={
+            config.tenant === "hpdef"
+              ? "bg-hpdefSecondary text-white py-1 px-4 rounded hover:bg-hpdefSecondary"
+              : "bg-ioclSecondary text-white py-1 px-4 rounded hover:bg-ioclSecondary"
+          }
         >
           Map
         </a>
@@ -134,6 +150,7 @@ const PetrolStationFinder = () => {
         query
       )}`;
       url += `&page=${page}&pageSize=${pageSize}`;
+      url += `&tenant=${config.tenant}`;
 
       const response = await fetch(url);
       if (!response.ok) {
@@ -166,9 +183,9 @@ const PetrolStationFinder = () => {
     <div className="mx-auto">
       <div className="text-2xl font-bold mb-4 ml-4 lg:ml-20 p-4">
         <img
-          src="https://cdn4.singleinterface.com/files/outlet/logo/99528/Logo_jpg.jpg"
-          alt="IndianOil Logo"
-          className="h-12 w-auto mr-2"
+          src={config.logo}
+          alt={`${config.name} Logo`}
+          className="h-16 w-auto mr-2"
         />
       </div>
       {/* <SearchCard onSearch={(latLng) => handleSearch({ ...latLng, page: 1 })} /> */}
@@ -198,7 +215,7 @@ const PetrolStationFinder = () => {
               }}
               navigation={false}
             >
-              {banner.map((img, i) => (
+              {config?.banners.map((img, i) => (
                 <SwiperSlide key={i}>
                   <img src={img} alt={`Slide ${i + "1"}`} />
                 </SwiperSlide>
@@ -223,8 +240,8 @@ const PetrolStationFinder = () => {
                 "Available Petrol Stations"
               ) : (
                 <>
-                  IndianOil Fuel Stations in{" "}
-                  <span className="text-[#f35e04]">{lastQuery}</span>
+                  {config.name} Fuel Stations in{" "}
+                  <span className={config?.tenant === 'hpdef' ? 'text-hpdefSecondary' : 'text-ioclSecondary'}>{lastQuery}</span>
                 </>
               )}
             </h4>
@@ -264,11 +281,12 @@ const App = () => {
   return (
     <>
       <Helmet>
-        <title>IndianOil Locator/Finder | Petrol Pump</title>
+        <title>{config?.title}</title>
         <meta
           name="description"
           content="Find closest IndianOil fuel station. Get accurate fuel station information e.g. address, phone no, map & timings."
         />
+         <link rel="icon" type="image/png" href={config.favicon} />
       </Helmet>
 
       <div className="relative min-h-screen flex flex-col">
@@ -306,7 +324,7 @@ const App = () => {
           </Routes>
         </div>
         <footer className="w-full text-center p-4 text-sm text-black bg-gray-100">
-          &copy; {new Date().getFullYear()} IOCL Clear Blue. All rights
+          &copy; {new Date().getFullYear()} {config?.name} Clear Blue. All rights
           reserved. Designed and Maintained by{" "}
           <span className="font-semibold">SKYHIT MEDIA.</span>
         </footer>

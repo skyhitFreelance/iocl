@@ -127,6 +127,7 @@
 /* eslint-disable react/prop-types */
 import { useEffect, useRef, useState } from "react";
 import { debounce } from "lodash";
+import { getTenantConfig } from "../tenantConfig";
 
 const SearchCard = ({ onSearch }) => {
   const [query, setQuery] = useState("");
@@ -135,7 +136,7 @@ const SearchCard = ({ onSearch }) => {
   const [suggestions, setSuggestions] = useState([]);
   const [isAdvancedSearch, setIsAdvancedSearch] = useState(false);
   const dropdownRef = useRef(null);
-
+  const config = getTenantConfig();
   const fetchSuggestions = debounce(async (input) => {
     if (!input) {
       setSuggestions([]);
@@ -144,7 +145,7 @@ const SearchCard = ({ onSearch }) => {
 
     try {
       const response = await fetch(
-        `https://demo.skyhitmedia.website/petrol-stations/suggestions?query=${input}`
+        `https://demo.skyhitmedia.website/petrol-stations/suggestions?query=${input}&tenant=${config.tenant}`
       );
       if (!response.ok) {
         throw new Error("Failed to fetch suggestions");
@@ -205,55 +206,67 @@ const SearchCard = ({ onSearch }) => {
 
   return (
     <div className="bg-white flex flex-col w-full relative items-center rounded-lg p-1 border-[#013d86] gap-16">
-      <h1 className="text-lg font-bold text-[#013d86] mb-2 border-b-4 border-[#013d86] w-full text-center pb-2">IndianOil</h1>
+      <h1 className="text-lg font-bold text-[#013d86] mb-2 border-b-4 border-[#013d86] w-full text-center pb-2">
+        {config?.name}
+      </h1>
       {/* Search Input */}
       <div className="mb-4 w-full relative flex items-center flex-col gap-3">
-      <h2 className="text-xl font-medium mb-2">Locate the nearest fuel station(s)</h2>
-      <div className="relative w-full mb-4">
-        <input
-          type="text"
-          placeholder="Search for a location..."
-          value={query}
-          onChange={handleInputChange}
-          className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-        {suggestions.length > 0 && (
-          <ul
-            ref={dropdownRef}
-            className="absolute top-full left-0 w-full bg-white border rounded-lg max-h-48 overflow-y-auto mt-1 z-10 shadow-md"
-          >
-            {suggestions.map((place) => (
-              <li
-                key={place.id}
-                className="p-2 hover:bg-gray-200 cursor-pointer text-ellipsis whitespace-nowrap overflow-hidden"
-                onClick={() => handleSuggestionClick(place)}
-                title={`${place.name} - ${place.address}`}
-              >
-                {place.name} - {place.address}
-              </li>
-            ))}
-          </ul>
-        )}
+        <h2 className="text-xl font-medium mb-2">
+          Locate the nearest fuel station(s)
+        </h2>
+        <div className="relative w-full mb-4">
+          <input
+            type="text"
+            placeholder="Search for a location..."
+            value={query}
+            onChange={handleInputChange}
+            className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          {suggestions.length > 0 && (
+            <ul
+              ref={dropdownRef}
+              className="absolute top-full left-0 w-full bg-white border rounded-lg max-h-48 overflow-y-auto mt-1 z-10 shadow-md"
+            >
+              {suggestions.map((place) => (
+                <li
+                  key={place.id}
+                  className="p-2 hover:bg-gray-200 cursor-pointer text-ellipsis whitespace-nowrap overflow-hidden"
+                  onClick={() => handleSuggestionClick(place)}
+                  title={`${place.name} - ${place.address}`}
+                >
+                  {place.name} - {place.address}
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
-         {/* Buttons */}
-      <div className="flex gap-4 items-center">
-        <button
-          className="bg-[#013d86] text-white px-6 py-1 lg:py-3 rounded-lg hover:bg-[#013d86]"
-          onClick={handleSearchClick}
-        >
-          Search
-        </button>
-        <button
-          className={`px-6 py-1 lg:py-3 rounded-lg ${
-            isAdvancedSearch
-              ? "bg-[#f35e04] text-white"
-              : "bg-white text-[#f35e04] border border-[#f35e04]"
-          } hover:bg-[#f35e04] hover:text-white`}
-          onClick={toggleAdvancedSearch}
-        >
-          Advanced Search
-        </button>
-      </div>
+        {/* Buttons */}
+        <div className="flex gap-4 items-center">
+          <button
+            className="bg-[#013d86] text-white px-6 py-1 lg:py-3 rounded-lg hover:bg-[#013d86]"
+            onClick={handleSearchClick}
+          >
+            Search
+          </button>
+          <button
+              className={`px-6 py-1 lg:py-3 rounded-lg ${
+                isAdvancedSearch
+                  ? config.tenant === 'hpdef'
+                    ? 'bg-hpdefSecondary text-white'
+                    : 'bg-ioclSecondary text-white'
+                  : config.tenant === 'hpdef'
+                  ? 'bg-white text-hpdefSecondary border border-hpdefSecondary'
+                  : 'bg-white text-ioclSecondary border border-ioclSecondary'
+              } ${
+                config.tenant === 'hpdef'
+                  ? 'hover:bg-hpdefSecondary hover:text-white'
+                  : 'hover:bg-ioclSecondary hover:text-white'
+              }`}
+            onClick={toggleAdvancedSearch}
+          >
+            Advanced Search
+          </button>
+        </div>
       </div>
 
       {/* Radius Dropdown (Visible Only in Advanced Search) */}
