@@ -118,6 +118,29 @@ app.get("/petrol-stations/suggestions", (req, res) => {
   });
 });
 
+app.get("/dispensers/suggestions", (req, res) => {
+  const { query, tenant = "iocl" } = req.query;
+
+  if (!query) {
+    return res.status(400).json({ error: "Query parameter is required." });
+  }
+  let tableName = tenant === "hpdef" ? "dispensers_hpdef" : "dispensers_iocl";
+  const suggestionQuery = `
+    SELECT id, ro_name AS name, address, latitude, longitude
+    FROM ${tableName}
+    WHERE ro_name LIKE ? OR address LIKE ?
+  `;
+  const params = [`%${query}%`, `%${query}%`];
+
+  db.query(suggestionQuery, params, (err, results) => {
+    if (err) {
+      console.error("Error fetching suggestions:", err);
+      return res.status(500).json({ error: "Failed to fetch suggestions." });
+    }
+    res.status(200).json(results);
+  });
+});
+
 
 // --- 4. Search Petrol Stations with Pagination ---
 // app.get("/petrol-stations/search", (req, res) => {
@@ -261,6 +284,82 @@ app.get("/petrol-stations/search", (req, res) => {
       SELECT id, ro_name AS name, address, latitude, longitude, fo_mobile AS mobile, pin_code AS pincode
       FROM ${tableName}
       WHERE ro_name LIKE ? OR address LIKE ?
+      ORDER BY id ASC
+      LIMIT ? OFFSET ?;
+    `;
+    const queryParam = `%${query}%`;
+    params = [queryParam, queryParam, currentPageSize, offset];
+  }
+
+  // Fetch the total count of records
+  db.query(countQuery, params.slice(0, 2), (err, countResults) => {
+    if (err) {
+      console.error("Error fetching count:", err);
+      return res.status(500).json({ error: "Failed to fetch petrol stations count." });
+    }
+    const total = countResults[0]?.total || 0;
+
+    if (total === 0) {
+      console.log("No data found for the given query.");
+      return res.status(200).json({
+        data: [],
+        pagination: { page: currentPage, pageSize: currentPageSize, total },
+      });
+    }
+
+    // Fetch the paginated results
+    db.query(mainQuery, params, (err, results) => {
+      if (err) {
+        console.error("Error fetching petrol stations:", err);
+        return res.status(500).json({ error: "Failed to fetch petrol stations." });
+      }
+      res.status(200).json({
+        data: results,
+        pagination: { page: currentPage, pageSize: currentPageSize, total },
+      });
+    });
+  });
+});
+
+app.get("/dispensers/search", (req, res) => {
+  const { query = "default", tenant = "iocl", page = 1, pageSize = 10 } = req.query;
+  // Ensure `page` and `pageSize` are integers
+  const currentPage = parseInt(page, 10) || 1;
+  const currentPageSize = parseInt(pageSize, 10) || 10;
+  const offset = (currentPage - 1) * currentPageSize;
+
+  console.log("Query Params:", { query, tenant, currentPage, currentPageSize, offset });
+
+  let tableName;
+  if (tenant === "hpdef") {
+    tableName = "dispensers_hpdef";
+  } else {
+    // Default to IOCL if tenant is not 'hpdef'
+    tableName = "dispensers_iocl";
+  }
+
+  let countQuery, mainQuery, params;
+  
+
+  if (query === "default") {
+    countQuery = `SELECT COUNT(*) AS total FROM ${tableName};`;
+    mainQuery = `
+      SELECT id, ssr AS name, address, pin_code AS pincode
+      FROM ${tableName}
+      ORDER BY id ASC
+      LIMIT ? OFFSET ?;
+    `;
+    params = [currentPageSize, offset];
+  } else {
+    countQuery = `
+      SELECT COUNT(*) AS total
+      FROM ${tableName}
+      WHERE ssr LIKE ? OR address LIKE ?;
+    `;
+    mainQuery = `
+      SELECT id, ssr AS name, address, pin_code AS pincode
+      FROM ${tableName}
+      WHERE ssr LIKE ? OR address LIKE ?
       ORDER BY id ASC
       LIMIT ? OFFSET ?;
     `;

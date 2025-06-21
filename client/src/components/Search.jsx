@@ -17,7 +17,7 @@
 // //     }
 
 // //     try {
-// //       const response = await fetch(`https://demo.skyhitmedia.website/petrol-stations/suggestions?query=${input}`);
+// //       const response = await fetch(`http://localhost:9000/petrol-stations/suggestions?query=${input}`);
 // //       if (!response.ok) {
 // //         throw new Error("Failed to fetch suggestions");
 // //       }
@@ -509,40 +509,47 @@
 
 
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { debounce } from "lodash";
 import { getTenantConfig } from "../tenantConfig";
 
-const SearchCard = ({ onSearch }) => {
+const SearchCard = ({ onSearch, activeTab, setActiveTab }) => {
   const [query, setQuery] = useState("");
   const [radius, setRadius] = useState(5);
   const [selectedPlace, setSelectedPlace] = useState(null);
   const [suggestions, setSuggestions] = useState([]);
   const [isAdvancedSearch, setIsAdvancedSearch] = useState(false);
-  const [activeTab, setActiveTab] = useState("Fuel Station");
 
   const dropdownRef = useRef(null);
   const config = getTenantConfig();
 
-  const fetchSuggestions = debounce(async (input) => {
+  const fetchSuggestions = useCallback(
+    debounce(async (input) => {
     if (!input) {
       setSuggestions([]);
       return;
     }
 
     try {
-      const response = await fetch(
-        `https://demo.skyhitmedia.website/petrol-stations/suggestions?query=${input}&tenant=${config.tenant}`
-      );
-      if (!response.ok) {
-        throw new Error("Failed to fetch suggestions");
-      }
-      const data = await response.json();
-      setSuggestions(data);
+      let endpoint;
+        if (activeTab === "Fuel Station") {
+          endpoint = `https://demo.skyhitmedia.website/petrol-stations/suggestions?query=${input}&tenant=${config.tenant}`;
+        } else {
+          endpoint = `https://demo.skyhitmedia.website/dispensers/suggestions?query=${input}&tenant=${config.tenant}`;
+        }
+
+      const response = await fetch(endpoint);
+        if (!response.ok) {
+          throw new Error("Failed to fetch suggestions");
+        }
+        const data = await response.json();
+        setSuggestions(data);
     } catch (error) {
       console.error("Error fetching suggestions:", error);
     }
-  }, 300);
+  }, 300),
+  [config.tenant]
+  );
 
   const handleInputChange = (e) => {
     const value = e.target.value;
@@ -563,7 +570,9 @@ const SearchCard = ({ onSearch }) => {
       return;
     }
     const searchQuery = selectedPlace ? selectedPlace.name : query;
-    onSearch(searchQuery);
+    onSearch({query: searchQuery,
+      tab: activeTab,
+      radius: isAdvancedSearch ? radius : null});
     setQuery("");
     setSelectedPlace(null);
     setSuggestions([]);
@@ -614,9 +623,9 @@ const SearchCard = ({ onSearch }) => {
               : "bg-gray-100 text-gray-700 border-orange-500"
           }`}
         >
-          Fuel Station
+          Retail Outlets
         </button>
-        <button
+        {config.tenant !== "hpdef" && <button
           onClick={() => setActiveTab("dispensers")}
           className={`px-7 py-2 rounded-lg font-semibold border ${
             activeTab === "dispensers"
@@ -625,11 +634,11 @@ const SearchCard = ({ onSearch }) => {
           }`}
         >
           Dispensers
-        </button>
+        </button>}
       </div>
 
       {/* Fuel Station Search */}
-      {activeTab === "Fuel Station" && (
+     
         <div className="w-full flex flex-col gap-6">
           <div className="relative w-full">
             <input
@@ -658,7 +667,7 @@ const SearchCard = ({ onSearch }) => {
             )}
           </div>
 
-          <div className="flex gap-4 items-center">
+          <div className="flex gap-4 items-center justify-center">
             <button
               className="bg-[#013d86] text-white px-6 py-2 rounded-lg hover:bg-[#012a62]"
               onClick={handleSearchClick}
@@ -703,14 +712,13 @@ const SearchCard = ({ onSearch }) => {
             </div>
           )}
         </div>
-      )}
-
+    
       {/* Dispenser Section */}
-      {activeTab === "dispensers" && (
+      {/* {activeTab === "dispensers" && (
         <div className="w-full flex flex-col gap-6 text-center text-gray-600 py-6">
           <p className="text-lg font-medium">Dispenser info will go here.</p>
         </div>
-      )}
+      )} */}
     </div>
   );
 };
