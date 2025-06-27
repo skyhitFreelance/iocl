@@ -126,9 +126,9 @@ app.get("/dispensers/suggestions", (req, res) => {
   }
   let tableName = tenant === "hpdef" ? "dispensers_hpdef" : "dispensers_iocl";
   const suggestionQuery = `
-    SELECT id, ro_name AS name, address, latitude, longitude
+    SELECT id, ssr AS name, address
     FROM ${tableName}
-    WHERE ro_name LIKE ? OR address LIKE ?
+    WHERE ssr LIKE ? OR address LIKE ?
   `;
   const params = [`%${query}%`, `%${query}%`];
 

@@ -337,7 +337,7 @@
 
 /* eslint-disable react/prop-types */
 import { useEffect, useState } from "react";
-import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
+import { Routes, Route, Navigate, useNavigate, Link } from "react-router-dom";
 import { FaMapMarkerAlt, FaSuitcase } from "react-icons/fa";
 import SearchCard from "./components/Search";
 import LoginPage from "./components/Login";
@@ -520,11 +520,12 @@ const Loader = () => (
 const PetrolStationFinder = () => {
   // State for active tab
   const [activeTab, setActiveTab] = useState("Fuel Station");
-  
+  console.log("Active Tab:", activeTab);
   // Separate states for fuel stations and dispensers
   const [fuelStations, setFuelStations] = useState([]);
   const [dispensers, setDispensers] = useState([]);
-  
+  const [hasSearched, setHasSearched] = useState(false);
+
   // Separate pagination states
   const [fuelCurrentPage, setFuelCurrentPage] = useState(1);
   const [dispensersCurrentPage, setDispensersCurrentPage] = useState(1);
@@ -539,6 +540,7 @@ const PetrolStationFinder = () => {
   const pageSize = 10;
 
   const handleSearch = async ({ query, tab, radius, page = 1 }) => {
+    setHasSearched(true);
     try {
       setLoading(true);
       let url;
@@ -592,6 +594,16 @@ const PetrolStationFinder = () => {
     }
   };
 
+  useEffect(() => {
+  if (!hasSearched) return;
+  
+  if (activeTab === "Fuel Station") {
+    handleSearch({ query: lastFuelQuery, tab: "Fuel Station", page: 1 });
+  } else if (activeTab === "dispensers") {
+    handleSearch({ query: lastDispensersQuery, tab: "dispensers", page: 1 });
+  }
+}, [activeTab]);
+
   const handlePageChange = (page) => {
     if (activeTab === "Fuel Station") {
       if (page < 1 || page > fuelTotalPages) return;
@@ -631,7 +643,7 @@ const PetrolStationFinder = () => {
         <div className=" mx-auto max-w-6xl flex flex-col md:flex-row w-full h-ful p-4 gap-4">
           <div className="w-full md:w-1/3 bg-white flex items-start rounded-2xl p-4">
             <SearchCard
-              onSearch={(params) => handleSearch({ ...params, page: 1 })}
+              onSearch={({ query, radius }) => handleSearch({ query, tab: activeTab, radius, page: 1 })}
               activeTab={activeTab}
               setActiveTab={setActiveTab}
             />
@@ -765,7 +777,7 @@ const App = () => {
         <footer className="w-full text-center p-4 text-sm text-black bg-gray-100">
           &copy; {new Date().getFullYear()} {config?.name} Clear Blue. All rights
           reserved. Designed and Maintained by{" "}
-          <span className="font-semibold">SKYHIT MEDIA.</span>
+          <span className="font-semibold"><Link to="https://skyhitmedia.com/">SKYHIT MEDIA.</Link></span>
         </footer>
       </div>
     </>

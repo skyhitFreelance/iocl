@@ -548,7 +548,7 @@ const SearchCard = ({ onSearch, activeTab, setActiveTab }) => {
       console.error("Error fetching suggestions:", error);
     }
   }, 300),
-  [config.tenant]
+  [activeTab, config.tenant]
   );
 
   const handleInputChange = (e) => {
