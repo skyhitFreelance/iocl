@@ -8,8 +8,6 @@ import hpdefBanner2 from "./assets/hpdef2.png";
 import hpdefBanner3 from "./assets/hpdef3.png";
 import hpdefBanner4 from "./assets/hpdef4.png";
 import hpdefBanner5 from "./assets/hpdef5.png";
-import ioclFavicon from "./assets/favicon.ico";
-import hpdefFavicon from "./assets/favicon.png";
 
 const tenantConfig = {
   iocl: {
@@ -20,7 +18,7 @@ const tenantConfig = {
     title: "IndianOil Locator/Finder | Petrol Pump",
     metaDescription:
       "Find closest IndianOil fuel station. Get accurate fuel station information e.g. address, phone no, map & timings.",
-    favicon: ioclFavicon,
+    favicon: "./favicon.ico",
     primaryColor: "#013d86",
     secondaryColor: "#f35e04",
   },
@@ -38,7 +36,7 @@ const tenantConfig = {
     title: "HPDEF Locator/Finder | Petrol Pump",
     metaDescription:
       "Find closest HPDEF fuel station. Get accurate fuel station information e.g. address, phone no, map & timings.",
-    favicon: hpdefFavicon,
+    favicon: "./favicon-hpdef.png",
     primaryColor: "#002749",
     secondaryColor: "#eb1e25",
   },
