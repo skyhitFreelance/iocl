@@ -291,8 +291,6 @@
 
 // // export default SearchCard;
 
-
-
 // import { useEffect, useRef, useState } from "react";
 // import { debounce } from "lodash";
 // import { getTenantConfig } from "../tenantConfig";
@@ -505,16 +503,12 @@
 
 // export default SearchCard;
 
-
-
-
-
-import { useCallback, useEffect, useRef, useState } from "react";
-import { debounce } from "lodash";
-import { getTenantConfig } from "../tenantConfig";
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { debounce } from 'lodash';
+import { getTenantConfig } from '../tenantConfig';
 
 const SearchCard = ({ onSearch, activeTab, setActiveTab }) => {
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState('');
   const [radius, setRadius] = useState(5);
   const [selectedPlace, setSelectedPlace] = useState(null);
   const [suggestions, setSuggestions] = useState([]);
@@ -525,30 +519,30 @@ const SearchCard = ({ onSearch, activeTab, setActiveTab }) => {
 
   const fetchSuggestions = useCallback(
     debounce(async (input) => {
-    if (!input) {
-      setSuggestions([]);
-      return;
-    }
+      if (!input) {
+        setSuggestions([]);
+        return;
+      }
 
-    try {
-      let endpoint;
-        if (activeTab === "Fuel Station") {
+      try {
+        let endpoint;
+        if (activeTab === 'Fuel Station') {
           endpoint = `https://demo.skyhitmedia.website/petrol-stations/suggestions?query=${input}&tenant=${config.tenant}`;
         } else {
           endpoint = `https://demo.skyhitmedia.website/dispensers/suggestions?query=${input}&tenant=${config.tenant}`;
         }
 
-      const response = await fetch(endpoint);
+        const response = await fetch(endpoint);
         if (!response.ok) {
-          throw new Error("Failed to fetch suggestions");
+          throw new Error('Failed to fetch suggestions');
         }
         const data = await response.json();
         setSuggestions(data);
-    } catch (error) {
-      console.error("Error fetching suggestions:", error);
-    }
-  }, 300),
-  [activeTab, config.tenant]
+      } catch (error) {
+        console.error('Error fetching suggestions:', error);
+      }
+    }, 300),
+    [activeTab, config.tenant]
   );
 
   const handleInputChange = (e) => {
@@ -566,14 +560,16 @@ const SearchCard = ({ onSearch, activeTab, setActiveTab }) => {
 
   const handleSearchClick = () => {
     if (!query.trim()) {
-      alert("Please enter a keyword to search.");
+      alert('Please enter a keyword to search.');
       return;
     }
     const searchQuery = selectedPlace ? selectedPlace.name : query;
-    onSearch({query: searchQuery,
+    onSearch({
+      query: searchQuery,
       tab: activeTab,
-      radius: isAdvancedSearch ? radius : null});
-    setQuery("");
+      radius: isAdvancedSearch ? radius : null,
+    });
+    setQuery('');
     setSelectedPlace(null);
     setSuggestions([]);
   };
@@ -593,9 +589,9 @@ const SearchCard = ({ onSearch, activeTab, setActiveTab }) => {
       }
     };
 
-    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener('mousedown', handleClickOutside);
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
 
@@ -608,111 +604,115 @@ const SearchCard = ({ onSearch, activeTab, setActiveTab }) => {
 
       {/* Main Heading */}
       <div className="text-xl font-medium text-center text-[#013d86]">
-        {activeTab === "Fuel Station"
-          ? "Locate the nearest fuel station(s)"
-          : "Locate the nearest dispenser(s)"}
+        {activeTab === 'Fuel Station'
+          ? 'Locate the nearest fuel station(s)'
+          : 'Locate the nearest dispenser(s)'}
       </div>
 
       {/* Tabs */}
       <div className="flex justify-center gap-4">
         <button
-          onClick={() => setActiveTab("Fuel Station")}
+          onClick={() => setActiveTab('Fuel Station')}
           className={`px-7 py-2 rounded-lg font-semibold border ${
-            activeTab === "Fuel Station"
-              ? "bg-[#f35e04] text-white border-[#f35e04]"
-              : "bg-gray-100 text-gray-700 border-orange-500"
+            activeTab === 'Fuel Station'
+              ? config.tenant === 'hpdef'
+                ? 'bg-hpdefSecondary text-white border-hpdefSecondary'
+                : 'bg-ioclPrimary text-white border-ioclPrimary'
+              : 'bg-gray-100 text-gray-700 border-orange-500'
           }`}
         >
           Retail Outlets
         </button>
-        {config.tenant !== "hpdef" && <button
-          onClick={() => setActiveTab("dispensers")}
+        <button
+          onClick={() => setActiveTab('dispensers')}
           className={`px-7 py-2 rounded-lg font-semibold border ${
-            activeTab === "dispensers"
-              ? "bg-[#f35e04] text-white border-orange-600"
-              : "bg-gray-100 text-gray-700 border-orange-500"
+            activeTab === 'dispensers'
+              ? config.tenant === "hpdef"
+          ? "bg-hpdefPrimary text-white border-hpdefSecondary"
+          : "bg-ioclSecondary text-white border-ioclPrimary"
+              : 'bg-gray-100 text-gray-700 border-orange-500'
           }`}
         >
           Dispensers
-        </button>}
+        </button>
       </div>
 
       {/* Fuel Station Search */}
-     
-        <div className="w-full flex flex-col gap-6">
-          <div className="relative w-full">
-            <input
-              type="text"
-              placeholder="Search for a location..."
-              value={query}
-              onChange={handleInputChange}
-              className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            {suggestions.length > 0 && (
-              <ul
-                ref={dropdownRef}
-                className="absolute top-full left-0 w-full bg-white border rounded-lg max-h-48 overflow-y-auto mt-1 z-10 shadow-md"
-              >
-                {suggestions.map((place) => (
-                  <li
-                    key={place.id}
-                    className="p-2 hover:bg-gray-200 cursor-pointer text-ellipsis whitespace-nowrap overflow-hidden"
-                    onClick={() => handleSuggestionClick(place)}
-                    title={`${place.name} - ${place.address}`}
-                  >
-                    {place.name} - {place.address}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
 
-          <div className="flex gap-4 items-center justify-center">
-            <button
-              className="bg-[#013d86] text-white px-6 py-2 rounded-lg hover:bg-[#012a62]"
-              onClick={handleSearchClick}
+      <div className="w-full flex flex-col gap-6">
+        <div className="relative w-full">
+          <input
+            type="text"
+            placeholder="Search for a location..."
+            value={query}
+            onChange={handleInputChange}
+            className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          {suggestions.length > 0 && (
+            <ul
+              ref={dropdownRef}
+              className="absolute top-full left-0 w-full bg-white border rounded-lg max-h-48 overflow-y-auto mt-1 z-10 shadow-md"
             >
-              Search
-            </button>
-            <button
-              className={`px-6 py-2 rounded-lg ${
-                isAdvancedSearch
-                  ? config.tenant === "hpdef"
-                    ? "bg-hpdefSecondary text-white"
-                    : "bg-ioclSecondary text-white"
-                  : config.tenant === "hpdef"
-                  ? "bg-white text-hpdefSecondary border border-hpdefSecondary"
-                  : "bg-white text-ioclSecondary border border-ioclSecondary"
-              } ${
-                config.tenant === "hpdef"
-                  ? "hover:bg-hpdefSecondary hover:text-white"
-                  : "hover:bg-ioclSecondary hover:text-white"
-              }`}
-              onClick={toggleAdvancedSearch}
-            >
-              Advanced Search
-            </button>
-          </div>
-
-          {isAdvancedSearch && (
-            <div className="w-full">
-              <label className="block font-medium mb-1">
-                Search Radius (km):
-              </label>
-              <select
-                value={radius}
-                onChange={handleRadiusChange}
-                className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="1">1 km</option>
-                <option value="5">5 km</option>
-                <option value="10">10 km</option>
-                <option value="20">20 km</option>
-              </select>
-            </div>
+              {suggestions.map((place) => (
+                <li
+                  key={place.id}
+                  className="p-2 hover:bg-gray-200 cursor-pointer text-ellipsis whitespace-nowrap overflow-hidden"
+                  onClick={() => handleSuggestionClick(place)}
+                  title={`${place.name} - ${place.address}`}
+                >
+                  {place.name} - {place.address}
+                </li>
+              ))}
+            </ul>
           )}
         </div>
-    
+
+        <div className="flex gap-4 items-center justify-center">
+          <button
+            className="bg-[#013d86] text-white px-6 py-2 rounded-lg hover:bg-[#012a62]"
+            onClick={handleSearchClick}
+          >
+            Search
+          </button>
+          <button
+            className={`px-6 py-2 rounded-lg ${
+              isAdvancedSearch
+                ? config.tenant === 'hpdef'
+                  ? 'bg-hpdefSecondary text-white'
+                  : 'bg-ioclSecondary text-white'
+                : config.tenant === 'hpdef'
+                ? 'bg-white text-hpdefSecondary border border-hpdefSecondary'
+                : 'bg-white text-ioclSecondary border border-ioclSecondary'
+            } ${
+              config.tenant === 'hpdef'
+                ? 'hover:bg-hpdefSecondary hover:text-white'
+                : 'hover:bg-ioclSecondary hover:text-white'
+            }`}
+            onClick={toggleAdvancedSearch}
+          >
+            Advanced Search
+          </button>
+        </div>
+
+        {isAdvancedSearch && (
+          <div className="w-full">
+            <label className="block font-medium mb-1">
+              Search Radius (km):
+            </label>
+            <select
+              value={radius}
+              onChange={handleRadiusChange}
+              className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="1">1 km</option>
+              <option value="5">5 km</option>
+              <option value="10">10 km</option>
+              <option value="20">20 km</option>
+            </select>
+          </div>
+        )}
+      </div>
+
       {/* Dispenser Section */}
       {/* {activeTab === "dispensers" && (
         <div className="w-full flex flex-col gap-6 text-center text-gray-600 py-6">

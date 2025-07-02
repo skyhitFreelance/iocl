@@ -9,7 +9,7 @@ import hpdefBanner3 from "./assets/hpdef3.png";
 import hpdefBanner4 from "./assets/hpdef4.png";
 import hpdefBanner5 from "./assets/hpdef5.png";
 import ioclFavicon from "./assets/favicon.ico";
-// import hpdefFavicon from "./assets/hpdef-favicon.ico";
+import hpdefFavicon from "./assets/favicon.png";
 
 const tenantConfig = {
   iocl: {
@@ -38,7 +38,7 @@ const tenantConfig = {
     title: "HPDEF Locator/Finder | Petrol Pump",
     metaDescription:
       "Find closest HPDEF fuel station. Get accurate fuel station information e.g. address, phone no, map & timings.",
-    favicon: "https://s3.ap-south-1.amazonaws.com/assets.hplubricants/s3fs-public/fevicon.png",
+    favicon: hpdefFavicon,
     primaryColor: "#002749",
     secondaryColor: "#eb1e25",
   },
