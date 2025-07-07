@@ -728,7 +728,7 @@ const App = () => {
     localStorage.removeItem("token");
     setLoggedIn(false);
   };
-console.log('config', config, 'favicon', config.favicon);
+
   return (
     <>
       <Helmet>
