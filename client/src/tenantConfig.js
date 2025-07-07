@@ -13,14 +13,16 @@ const tenantConfig = {
   iocl: {
     name: "IndianOil",
     tenant: "iocl",
-    logo: "https://cdn4.singleinterface.com/files/outlet/logo/99528/Logo_jpg.jpg",
+    logo: "https://ioclclearblue.com/wp-content/uploads/2024/10/Indian-Oil-logo-min-2048x635.png",
     banners: [banner1, banner2, banner3, banner4],
     title: "IndianOil Locator/Finder | Petrol Pump",
     metaDescription:
-      "Find closest IndianOil fuel station. Get accurate fuel station information e.g. address, phone no, map & timings.",
-    favicon: "./favicon.ico",
+      "Find the nearest IndianOil Clearblue dispensers and Petrol bunks. Get accurate DEF Oil Fuel Stations info for including address, contact number, timings, and map for all nearby fuel stations.",
+    metaKeywords: "IndianOil Clearblue Dispensers, DEF Oil Fuel Stations, IndianOil fuel Dispensers, IndianOil petrol pump locator, IndianOil Clearblue Dispenser finder, nearest petrol pump, fuel stations on map, petrol pump contact, Clearblue Dispensers",
+    favicon: "/favicon.ico",
     primaryColor: "#013d86",
     secondaryColor: "#f35e04",
+    footerName: "IndianOil Clear Blue",
   },
   hpdef: {
     name: "HPDEF",
@@ -35,10 +37,12 @@ const tenantConfig = {
     ],
     title: "HPDEF Locator/Finder | Petrol Pump",
     metaDescription:
-      "Find closest HPDEF fuel station. Get accurate fuel station information e.g. address, phone no, map & timings.",
-    favicon: "./favicon-hpdef.png",
+      "Locate HP Def AdBlue Dispensers and Petrol pumps near you. Get precise DEF Oil Fuel Stations details like address, phone number, operating hours, and directions via map.",
+    metaKeywords: "HPCL Def AdBlue Dispensers, DEF Oil Fuel Stations, HP Def AdBlue Dispenser finder, HPCL fuel dispensers, HPCL petrol pump locator, HPCL station finder, nearest HPCL pump, fuel dispenser HPCL, HP petrol bunk, HPCL fuel station map",
+    favicon: "/favicon-hpdef.png?v=2",
     primaryColor: "#002749",
     secondaryColor: "#eb1e25",
+    footerName: "HPDEF AdBlue",
   },
 };
 

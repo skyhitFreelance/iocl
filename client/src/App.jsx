@@ -728,16 +728,20 @@ const App = () => {
     localStorage.removeItem("token");
     setLoggedIn(false);
   };
-
+console.log('config', config, 'favicon', config.favicon);
   return (
     <>
       <Helmet>
         <title>{config?.title}</title>
         <meta
           name="description"
-          content="Find closest IndianOil fuel station. Get accurate fuel station information e.g. address, phone no, map & timings."
+          content={config?.metaDescription}
         />
-         <link rel="icon" type="image/png" href={config.favicon} />
+        <meta
+          name="keywords"
+          content={config?.metaKeywords}
+        />
+         <link rel="shortcut icon" type="image/png" href={config.favicon} />
       </Helmet>
 
       <div className="relative min-h-screen flex flex-col">
@@ -775,7 +779,7 @@ const App = () => {
           </Routes>
         </div>
         <footer className="w-full text-center p-4 text-sm text-black bg-gray-100">
-          &copy; {new Date().getFullYear()} {config?.name} Clear Blue. All rights
+          &copy; {new Date().getFullYear()} {config?.footerName}. All rights
           reserved. Designed and Maintained by{" "}
           <span className="font-semibold"><Link to="https://skyhitmedia.com/">SKYHIT MEDIA.</Link></span>
         </footer>
