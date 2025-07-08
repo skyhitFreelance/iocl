@@ -322,80 +322,83 @@ app.get("/petrol-stations/search", (req, res) => {
 });
 
 app.get("/dispensers/search", (req, res) => {
-  const { query = "default", tenant = "iocl", page = 1, pageSize = 10 } = req.query;
-  // Ensure `page` and `pageSize` are integers
-  const currentPage = parseInt(page, 10) || 1;
-  const currentPageSize = parseInt(pageSize, 10) || 10;
-  const offset = (currentPage - 1) * currentPageSize;
+  const { query = "", tenant = "iocl", page = 1, pageSize = 10 } = req.query;
+  const currentPage     = Math.max(1, parseInt(page,10));
+  const currentPageSize = Math.max(1, parseInt(pageSize,10));
+  const offset          = (currentPage - 1) * currentPageSize;
 
-  console.log("Query Params:", { query, tenant, currentPage, currentPageSize, offset });
-
-  let tableName;
-  if (tenant === "hpdef") {
-    tableName = "dispensers_hpdef";
-  } else {
-    // Default to IOCL if tenant is not 'hpdef'
-    tableName = "dispensers_iocl";
-  }
+  const tableName = tenant === "hpdef"
+    ? "dispensers_hpdef"
+    : "dispensers_iocl";
 
   let countQuery, mainQuery, params;
-  
+  const filtering = Boolean(query.trim());
 
-  if (query === "default") {
-    countQuery = `SELECT COUNT(*) AS total FROM ${tableName};`;
-    mainQuery = `
-      SELECT id, ssr AS name, address, pin_code AS pincode
+  if (!filtering) {
+    countQuery = `SELECT COUNT(*) AS total FROM ${tableName}`;
+    mainQuery  = `
+      SELECT id, ssr AS name, address, pin_code AS pincode, district
       FROM ${tableName}
       ORDER BY id ASC
-      LIMIT ? OFFSET ?;
-    `;
+      LIMIT ? OFFSET ?`;
     params = [currentPageSize, offset];
   } else {
+    const like = `%${query.trim()}%`;
     countQuery = `
       SELECT COUNT(*) AS total
       FROM ${tableName}
-      WHERE ssr LIKE ? OR address LIKE ?;
-    `;
+      WHERE ssr      LIKE ?
+         OR address  LIKE ?
+         OR district LIKE ?`;
     mainQuery = `
-      SELECT id, ssr AS name, address, pin_code AS pincode
+      SELECT id, ssr AS name, address, pin_code AS pincode, district
       FROM ${tableName}
-      WHERE ssr LIKE ? OR address LIKE ?
+      WHERE ssr      LIKE ?
+         OR address  LIKE ?
+         OR district LIKE ?
       ORDER BY id ASC
-      LIMIT ? OFFSET ?;
-    `;
-    const queryParam = `%${query}%`;
-    params = [queryParam, queryParam, currentPageSize, offset];
+      LIMIT ? OFFSET ?`;
+    params = [ like, like, like, currentPageSize, offset ];
   }
 
-  // Fetch the total count of records
-  db.query(countQuery, params.slice(0, 2), (err, countResults) => {
-    if (err) {
-      console.error("Error fetching count:", err);
-      return res.status(500).json({ error: "Failed to fetch petrol stations count." });
-    }
-    const total = countResults[0]?.total || 0;
+  // DEBUG
+  console.log("COUNT SQL:", countQuery, filtering ? params.slice(0,3) : []);
+  console.log("DATA  SQL:", mainQuery, params);
 
-    if (total === 0) {
-      console.log("No data found for the given query.");
-      return res.status(200).json({
-        data: [],
-        pagination: { page: currentPage, pageSize: currentPageSize, total },
-      });
-    }
-
-    // Fetch the paginated results
-    db.query(mainQuery, params, (err, results) => {
+  // Execute
+  db.query(
+    countQuery,
+    filtering ? params.slice(0,3) : [],
+    (err, countRows) => {
       if (err) {
-        console.error("Error fetching petrol stations:", err);
-        return res.status(500).json({ error: "Failed to fetch petrol stations." });
+        console.error("Count error:", err);
+        return res.status(500).json({ error: "Count failed" });
       }
-      res.status(200).json({
-        data: results,
-        pagination: { page: currentPage, pageSize: currentPageSize, total },
-      });
-    });
-  });
+      const total = countRows[0]?.total || 0;
+      if (total === 0) {
+        return res.json({
+          data: [],
+          pagination: { page: currentPage, pageSize: currentPageSize, total }
+        });
+      }
+      db.query(
+        mainQuery,
+        params,
+        (err, rows) => {
+          if (err) {
+            console.error("Data error:", err);
+            return res.status(500).json({ error: "Fetch failed" });
+          }
+          res.json({
+            data: rows,
+            pagination: { page: currentPage, pageSize: currentPageSize, total }
+          });
+        }
+      );
+    }
+  );
 });
+
 
 
 // --- 5. Add Petrol Station (Requires Authentication) ---
